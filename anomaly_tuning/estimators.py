@@ -6,11 +6,58 @@
 # on k-NN (AverageKLPE, MaxKLPE), the others are implemented in scikit-learn.
 
 import numpy as np
+import pandas as pd
 
 from sklearn import ensemble
 from sklearn.base import BaseEstimator
 from sklearn.svm import OneClassSVM
 from sklearn.neighbors import NearestNeighbors, KernelDensity
+from hdbscan import HDBSCAN
+
+
+class HDBSCAN_(BaseEstimator):
+    def __init__(self,
+                 min_cluster_size=15,
+                 min_samples=None,
+                 cluster_selection_method='leaf',
+                 metric='euclidean',
+                 contamination=0.1,
+                ):
+
+        self.min_cluster_size = min_cluster_size
+        self.min_samples = min_samples
+        self.metric = metric
+        self.cluster_selection_method = cluster_selection_method
+        self.hdbscan = HDBSCAN(min_cluster_size=self.min_cluster_size,
+                               min_samples=self.min_samples,
+                               cluster_selection_method=self.cluster_selection_method,
+                               metric=self.metric,
+                               )
+        self.contamination = contamination
+
+    def fit(self, X):
+        self.hdbscan.fit(X)
+        self.scores_fit_ = - self.hdbscan.outlier_scores_
+
+        return self
+
+    def score_samples(self, X):
+        self.hdbscan.fit(X)
+        scores = - self.hdbscan.outlier_scores_
+        return scores
+
+    def predict(self, X):
+        threshold = np.percentile(self.scores_fit_, 100 * self.contamination)
+        pred = (self.score_samples(X) >= threshold).astype(int)
+
+        return pred
+
+    def get_params(self, deep=True):
+        return {'min_cluster_size': self.min_cluster_size,
+                'min_samples': self.min_samples,
+                'cluster_selection_method': self.cluster_selection_method,
+                'metric': self.metric,
+               }
 
 
 class KLPE(BaseEstimator):

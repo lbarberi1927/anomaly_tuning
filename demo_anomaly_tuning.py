@@ -4,12 +4,13 @@
 import numpy as np
 
 import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 from sklearn.model_selection import ShuffleSplit
 
 from anomaly_tuning.estimators import (AverageKLPE, MaxKLPE, OCSVM,
-                                       KernelSmoothing, IsolationForest)
+                                       KernelSmoothing, HDBSCAN_)
 from anomaly_tuning import anomaly_tuning
 from anomaly_tuning.utils import GaussianMixture
 
@@ -21,7 +22,7 @@ matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
 
 # Generating Gaussian mixture sample
 
-N_JOBS = 1  # set to -1 to use all your CPUs
+N_JOBS = -1  # set to -1 to use all your CPUs
 
 n_samples = 1000
 n_features = 2
@@ -61,15 +62,15 @@ Z_true = gm.density(grid)
 Z_true = Z_true.reshape(xx.shape)
 
 
-algorithms = [AverageKLPE, MaxKLPE, OCSVM, IsolationForest, KernelSmoothing]
+algorithms = [AverageKLPE, MaxKLPE, HDBSCAN_]
 algo_param = {
     'AverageKLPE': {'k': np.arange(1, min(50, int(0.8 * n_samples)), 2),
                     'novelty': [True]},
     'MaxKLPE': {'k': np.arange(1, min(50, int(0.8 * n_samples)), 2),
                 'novelty': [True]},
-    'OCSVM': {'sigma': np.linspace(0.01, 5., 10)},
-    'IsolationForest': {'max_samples': np.linspace(0.1, 1., 10)},
-    'KernelSmoothing': {'bandwidth': np.linspace(0.01, 5., 10)},
+    'HDBSCAN_': {'min_cluster_size': np.arange(2, 25, 2),
+                 'min_samples': np.arange(2, 25, 2),
+                 }
 }
 
 # Tuning step
